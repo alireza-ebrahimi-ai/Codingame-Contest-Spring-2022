@@ -3,40 +3,9 @@ import java.util.HashSet;
 import java.util.Scanner;
 
 
-
-
-/**
- * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
- **/
-
-
 class Vector {
     public double x;
 	public double y;
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        long temp;
-        temp = Double.doubleToLongBits(x);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        temp = Double.doubleToLongBits(y);
-        result = prime * result + (int) (temp ^ (temp >>> 32));
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null) return false;
-        if (getClass() != obj.getClass()) return false;
-        Vector other = (Vector) obj;
-        if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) return false;
-        if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) return false;
-        return true;
-    }
 
     public Vector(double x, double y) {
         this.x = x;
@@ -206,6 +175,7 @@ class Base{
     Vector[] attackPoints;
     Vector[] controlMonstersAttackPoints;
     int currentAttackPointIndex = 0;
+    int DEFENSIVE_CIRCLE_RADIUS;
 
     static int RADIUS = 5000;
 
@@ -223,7 +193,7 @@ class Base{
     }
 
     private void calcDefensePoints(){
-        int DEFENSIVE_CIRCLE_RADIUS = 7300;
+        DEFENSIVE_CIRCLE_RADIUS = 7300;
 
         int numberOfDefensePoints = 6;
 
@@ -290,10 +260,111 @@ class Base{
         currentDefensePoints = farDefensePoints;
     }
 
+    public void calcDefensePoints(int attackerRadius, boolean hasAnAttacker) {
+    	
+    	
+    	if(hasAnAttacker) {
+    		if(attackerRadius == -1) {
+        		attackerRadius = 4800;
+        	}
+    		
+    		DEFENSIVE_CIRCLE_RADIUS = attackerRadius + 1200;
+
+            int numberOfDefensePoints = 4;
+
+            Vector[] defensePoints = new Vector[6];
+            int index = 2;
+            
+            double maxAngle = Double.MIN_VALUE;
+            double minAngle = Double.MAX_VALUE;
+            
+            
+            for(double angle = 0; angle < Math.PI * 2; angle += 0.0001) {
+            	int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle));
+                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle));
+                if(x < 2000 || y < 2000 || x > Player.MAP_WIDTH - 2000 || y > Player.MAP_HEIGHT - 2000) continue;
+                
+                
+                maxAngle = Math.max(maxAngle, angle);
+                minAngle = Math.min(minAngle, angle);
+            }
+            
+            double add = (maxAngle - minAngle) / (numberOfDefensePoints - 1);
+            
+            for(int i = 2; i < 6; i++) {
+            	double angle = minAngle + add * (i - 2);
+            	int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle));
+                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle));
+            	defensePoints[i] = new Vector(x, y);
+            }
+
+//            for(int i = 0; i < (numberOfDefensePoints * 4); i++){
+//                double angle = (Math.PI * 2) * (0.5 + i) / (numberOfDefensePoints * 4);
+//                int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle));
+//                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle));
+//                if(x < 0 || y < 0 || x > Player.MAP_WIDTH || y > Player.MAP_HEIGHT) continue;
+//
+//                defensePoints[index] = new Vector(x, y);
+//                index++;
+//            }
+            
+            currentDefensePoints = defensePoints;
+    	}
+    	else {    
+    		if(attackerRadius == -1) {
+	    		attackerRadius = 6300;
+	    	}
+    	
+    		DEFENSIVE_CIRCLE_RADIUS = attackerRadius + 1200;
+
+            int numberOfDefensePoints = 6;
+
+            Vector[] defensePoints = new Vector[numberOfDefensePoints];
+            int index = 0;
+            
+            double maxAngle = Double.MIN_VALUE;
+            double minAngle = Double.MAX_VALUE;
+            
+            
+            for(double angle = 0; angle < Math.PI * 2; angle += 0.0001) {
+            	int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle));
+                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle));
+                if(x < 2000 || y < 2000 || x > Player.MAP_WIDTH - 2000 || y > Player.MAP_HEIGHT - 2000) continue;
+                
+                
+                maxAngle = Math.max(maxAngle, angle);
+                minAngle = Math.min(minAngle, angle);
+            }
+            
+            double add = (maxAngle - minAngle) / 2;
+            
+            for(int i = 0; i < 3; i++) {
+            	double angle = minAngle + add * i;
+            	int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle));
+                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle));
+            	defensePoints[i * 2] = new Vector(x, y);
+            	defensePoints[i * 2 + 1] = new Vector(x, y);
+            }
+            
+            
+//            for(int i = 0; i < (numberOfDefensePoints * 4); i++){
+//                double angle2 = (Math.PI * 2) * (0.5 + i) / (numberOfDefensePoints * 4);
+//                int x = (int)(this.pos.x + DEFENSIVE_CIRCLE_RADIUS * Math.cos(angle2));
+//                int y = (int)(this.pos.y + DEFENSIVE_CIRCLE_RADIUS * Math.sin(angle2));
+//                if(x < 0 || y < 0 || x > Player.MAP_WIDTH || y > Player.MAP_HEIGHT) continue;
+//
+//                defensePoints[index] = new Vector(x, y);
+//                index++;
+//            }
+            
+            currentDefensePoints = defensePoints;
+    	}
+    }
+    
     private void calcAttackPoints(){
         int ATTACK_CIRCLE_RADIUS = RADIUS;
 
-        int numberOfAttackPoints = 3;
+        int numberOfAttackPoints = 4;
 
         attackPoints = new Vector[numberOfAttackPoints];
         int index = 0;
@@ -393,30 +464,37 @@ class Base{
     }
 }
 
-class Hero{
-    
-	int id;
+class Entity{
+    int id;
     Vector pos;
-    String command;
     int shieldLife;
     boolean isControlled;
+    
+    public Entity(int id, Vector pos, int shieldLife, boolean isControlled) {
+        this.id = id;
+        this.pos = pos;
+        this.shieldLife = shieldLife;
+        this.isControlled = isControlled;
+    }
+}
+
+class Hero extends Entity{
+    
+    String command;
     HashSet<Integer> monstersHandling;
     boolean usingSpell;
 
-    static int DIST_PER_TURN = 800;
-    static int DAMAGE_RANGE = 800;
-    static int DAMAGE = 2;
-    static int WIND_RANGE = 1280;
-    static int CONTROL_RANGE = 2200;
-    static int SHIELD_RANGE = 2200;
+    static final int DIST_PER_TURN = 800;
+    static final int DAMAGE_RANGE = 800;
+    static final int DAMAGE = 2;
+    static final int WIND_RANGE = 1280;
+    static final int CONTROL_RANGE = 2200;
+    static final int SHIELD_RANGE = 2200;
     public static final int WIND_PUSH_RANGE = 2200;
 
-    public Hero(int id, Vector p, int shieldLife, boolean isControlled){
-        this.id = id;
-        this.pos = p;
+    public Hero(int id, Vector pos, int shieldLife, boolean isControlled){
+    	super(id, pos, shieldLife, isControlled);
         this.command = "";
-        this.shieldLife = shieldLife;
-        this.isControlled = isControlled;
         this.monstersHandling = new HashSet<>();
         this.usingSpell = false;
     }
@@ -477,55 +555,66 @@ class Hero{
 
 	public Vector getPosToGoToActionMonster(Monster closestMonster, int actionRange) {
 		
-//		System.err.println();
-//		System.err.println("in getPosToGoToActionMonster");
-//		System.err.println("closestMonster.id: " + closestMonster.id);
-//		System.err.println("this.id: " + this.id);
+////		System.err.println();
+////		System.err.println("in getPosToGoToActionMonster");
+////		System.err.println("closestMonster.id: " + closestMonster.id);
+////		System.err.println("this.id: " + this.id);
+//		
+//		Vector pos2 = null;
+//		
+//		double dist = Player.getDist(this.pos, closestMonster.pos) - actionRange;
+//		
+//		if(dist < 0) return this.pos;
+//		
+////		System.err.println("dist: " + dist);
+//		
+//		Vector prevGoal = null;
+//		Vector prevPrevPos = null;
+//		
+//		while(prevGoal == null || pos2.x - prevGoal.x > 0 || pos2.y - prevGoal.y > 0) {
+//			int numberOfTurnsPass = (int) Math.ceil(dist / DIST_PER_TURN);
+////			System.err.println("numberOfTurnsPass: " + numberOfTurnsPass);
+//			
+//			Vector nextXTurnsPosMonster = closestMonster.getPosNextXTurns(numberOfTurnsPass);
+////			System.err.println("nextXTurnsPosMonster: " + nextXTurnsPosMonster);
+//			
+//			prevPrevPos = prevGoal;
+//			prevGoal = pos2;
+//			pos2 = nextXTurnsPosMonster;
+//			
+//			dist = Player.getDist(this.pos, nextXTurnsPosMonster) - actionRange;
+//			if(dist < 0) return nextXTurnsPosMonster;
+//			
+////			System.err.println("dist: " + dist);
+////			System.err.println("prevPrevPos: " + prevPrevPos);
+////			System.err.println("prevGoal: " + prevGoal);
+////			System.err.println("pos2: " + pos2);
+//			if(prevPrevPos != null && pos2.x - prevPrevPos.x == 0 && pos2.y - prevPrevPos.y == 0) break;
+//		}
 		
-		Vector pos2 = null;
 		
-		double dist = Player.getDist(this.pos, closestMonster.pos) - actionRange;
 		
-		if(dist < 0) return this.pos;
+		int numberOfTurnsForward = 0;
 		
-//		System.err.println("dist: " + dist);
-		
-		Vector prevGoal = null;
-		Vector prevPrevPos = null;
-		
-		while(prevGoal == null || pos2.x - prevGoal.x > 0 || pos2.y - prevGoal.y > 0) {
-			int numberOfTurnsPass = (int) Math.ceil(dist / DIST_PER_TURN);
-//			System.err.println("numberOfTurnsPass: " + numberOfTurnsPass);
-			
-			Vector nextXTurnsPosMonster = closestMonster.getPosNextXTurns(numberOfTurnsPass);
-//			System.err.println("nextXTurnsPosMonster: " + nextXTurnsPosMonster);
-			
-			prevPrevPos = prevGoal;
-			prevGoal = pos2;
-			pos2 = nextXTurnsPosMonster;
-			
-			dist = Player.getDist(this.pos, nextXTurnsPosMonster) - actionRange;
-			if(dist < 0) return nextXTurnsPosMonster;
-			
-//			System.err.println("dist: " + dist);
-//			System.err.println("prevPrevPos: " + prevPrevPos);
-//			System.err.println("prevGoal: " + prevGoal);
-//			System.err.println("pos2: " + pos2);
-			if(prevPrevPos != null && pos2.x - prevPrevPos.x == 0 && pos2.y - prevPrevPos.y == 0) break;
+		Vector pos = new Vector(closestMonster.pos);
+		while(Player.numberOfTurnsToReach(Player.getDist(this.pos, pos) - actionRange, Hero.DIST_PER_TURN) > numberOfTurnsForward) {
+			numberOfTurnsForward++;
+			pos = closestMonster.getPosNextXTurns(numberOfTurnsForward);
 		}
 		
-		return pos2;
+//		System.err.println("pos2: " + pos2);
+//		System.err.println("pos: " + pos);
+		
+		return pos;
 	}
 	
-	public boolean canCastShield() {
-		return !this.isControlled && Player.myBase.mana >= Player.SPELL_COST && this.shieldLife == 0;
+	public boolean canCastShield(Entity entity) {
+		return this.isAvailable() && Player.myBase.mana >= Player.SPELL_COST && entity.shieldLife == 0 && Player.inRange(this.pos, entity.pos, Hero.SHIELD_RANGE);
 	}
 	
-	@Override
-	public String toString() {
-		return "Hero{id: " + id + " pos: " + this.pos.toIntString() + "}"; 
+	public boolean canWind(Entity entity) {
+		return this.isAvailable() && Player.myBase.mana >= Player.SPELL_COST && entity.shieldLife == 0 && Player.inRange(this.pos, entity.pos, Hero.WIND_RANGE);
 	}
-
 	
 	public void resetValues(Hero savedHero) {
 
@@ -541,11 +630,19 @@ class Hero{
 			}
 		}
 	}
+
+	
+
+	
+	
+	
+	@Override
+	public String toString() {
+		return "Hero{id: " + id + " pos: " + this.pos.toIntString() + "}"; 
+	}
 }
 
-class Monster{
-    int id;
-    Vector pos;
+class Monster extends Entity{
     int health;
     int vx;
     int vy;
@@ -553,8 +650,7 @@ class Monster{
     int threatFor;
     boolean handled;
     int numberOfTurnsToDamageMyBase;
-    int shieldLife;
-    boolean isControlled;
+    int numberOfTurnsToDamageOpBase;
 
     double m;
     double b;
@@ -562,17 +658,13 @@ class Monster{
     static int DIST_TO_DAMAGE_BASE = 300;
     static int DIST_PER_TURN = 400;
 
-    public Monster(int id, Vector p, int health, int vx, int vy, boolean isTargetingBase, int threatFor, Base myBase, int shieldLife, 
-    boolean isControlled){
-        this.id = id;
-        this.pos = p;
+    public Monster(int id, Vector pos, int health, int vx, int vy, boolean isTargetingBase, int threatFor, int shieldLife, boolean isControlled){
+    	super(id, pos, shieldLife, isControlled);
         this.health = health;
         this.vx = vx;
         this.vy = vy;
         this.isTargetingBase = isTargetingBase;
         this.threatFor = threatFor;
-        this.shieldLife = shieldLife;
-        this.isControlled = isControlled;
         this.handled = false;
 
         //System.err.println("vx: " + vx);
@@ -583,21 +675,26 @@ class Monster{
 
         this.b = this.pos.y - this.m * this.pos.x;
 
-        this.numberOfTurnsToDamageMyBase = getNumberOfTurnsToDamageBase(myBase);
+        this.numberOfTurnsToDamageMyBase = getNumberOfTurnsToDamageBase(Player.myBase);
+        this.numberOfTurnsToDamageOpBase = getNumberOfTurnsToDamageBase(Player.opBase);
 
         //System.err.println("id: " + this.id + " y = " +  this.m + "x + " + this.b);
     }
 
     public Vector getPosNextXTurns(int numberOfTurns) {
+    	Base base = Player.myBase;
+    	if(this.numberOfTurnsToDamageMyBase < 0) base = Player.opBase;
+    	
     	Vector newPos = new Vector(this.pos);
     	
     	boolean wasOutsideBase = false;
     	
-    	while(!Player.myBase.isMonsterInside(newPos) && numberOfTurns > 0) {
+    	while(!base.isMonsterInside(newPos) && numberOfTurns > 0) {
     		newPos = newPos.add(new Vector(this.vx, this.vy)).symmetricTruncate(Player.symmetryOrigin);
     		numberOfTurns--;
     		wasOutsideBase = true;
 		}
+    	
     	
     	if(numberOfTurns == 0) return newPos;
     	
@@ -605,7 +702,7 @@ class Monster{
     	else {
 //    		System.err.println("wasOutsideBase newPos: " + newPos);
 			
-			Vector velocity = Player.getVelocityPos1ToPos2(newPos, Player.myBase.pos, DIST_PER_TURN);
+			Vector velocity = Player.getVelocityPos1ToPos2(newPos, base.pos, Monster.DIST_PER_TURN);
 //			System.err.println("velocity: " + velocity);
 			
 			return newPos.add(velocity.mult(numberOfTurns)).symmetricTruncate(Player.symmetryOrigin);
@@ -617,9 +714,13 @@ class Monster{
     }
 
     public boolean isFutureThreatToBase(Base base){
-        double dist = minDistFromLineToPoint(-this.m, 1, -this.b, base.pos.x, base.pos.y);
-
-        return base.willMonsterReachBase(this, dist);
+//        double dist = minDistFromLineToPoint(-this.m, 1, -this.b, base.pos.x, base.pos.y);
+//
+//        return base.willMonsterReachBase(this, dist);
+    	
+    	if(base.pos.x == Player.myBase.pos.x && base.pos.y == Player.myBase.pos.y) return this.numberOfTurnsToDamageMyBase < Integer.MAX_VALUE;
+    	
+    	return this.numberOfTurnsToDamageOpBase < Integer.MAX_VALUE;
     }
 
     public double minDistFromLineToPoint(double a, int b, double c, double x, double y)
@@ -636,7 +737,7 @@ class Monster{
         double dist = Player.getDist(this.pos, base.pos);
         int add1IfControlledByMe = 0;
         if(this.isControlled && Player.monstorsUnderMyControlIDs.contains(this.id)) add1IfControlledByMe = 1;
-        if(dist <= Base.RADIUS) return (int) Math.ceil((dist - DIST_TO_DAMAGE_BASE) / DIST_PER_TURN) + add1IfControlledByMe;
+        if(dist <= Base.RADIUS) return Player.numberOfTurnsToReach(dist - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN) + add1IfControlledByMe;
 
         dist = minDistFromLineToPoint(-this.m, 1, -this.b, base.pos.x, base.pos.y);
 
@@ -649,8 +750,8 @@ class Monster{
         Vector vector = new Vector(target.x - center.x, target.y - center.y).normalize();
         Vector result = new Vector(center.x + (vector.x * Base.RADIUS), center.y + (vector.y * Base.RADIUS));
         
-        return (int) (Math.ceil(Player.getDist(result, this.pos) / DIST_PER_TURN) + 
-        Math.ceil((Base.RADIUS - DIST_TO_DAMAGE_BASE) / DIST_PER_TURN));
+        return Player.numberOfTurnsToReach(Player.getDist(result, this.pos), DIST_PER_TURN) + 
+        		Player.numberOfTurnsToReach(Base.RADIUS - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN);
     }
 
 	@Override
@@ -690,7 +791,7 @@ class Player {
     public static int hero2CurrDefensivePointIndex = 2;
     public static int hero3CurrDefensivePointIndex = 4;
 
-    static int FARM_RANGE = 3000;
+    static int FARM_RANGE = 4000;
     static int SPELL_COST = 10;
 
     static int nextTurnWindOpAttacker;
@@ -705,7 +806,7 @@ class Player {
     static ArrayList<Monster> monsters, savedMonsters;
     static ArrayList<Hero> myHeros, savedMyHeros, opHeros;
     
-    static int turnToStartAttack = 100;
+    static int turnToStartAttack = 150;
     
     static int numberOfTurnsToSim = 15;
     
@@ -763,8 +864,8 @@ class Player {
             
             
                 switch(type){
-                    case 0: monsters.add(new Monster(id, new Vector(x, y), health, vx, vy, isTargetingBase, threatFor, myBase, shieldLife, isControlled)); 
-                    		savedMonsters.add(new Monster(id, new Vector(x, y), health, vx, vy, isTargetingBase, threatFor, myBase, shieldLife, isControlled)); break;
+                    case 0: monsters.add(new Monster(id, new Vector(x, y), health, vx, vy, isTargetingBase, threatFor, shieldLife, isControlled)); 
+                    		savedMonsters.add(new Monster(id, new Vector(x, y), health, vx, vy, isTargetingBase, threatFor, shieldLife, isControlled)); break;
                     case 1: myHeros.add(new Hero(id, new Vector(x, y), shieldLife, isControlled)); 
                     		savedMyHeros.add(new Hero(id, new Vector(x, y), shieldLife, isControlled)); break;
                     case 2: opHeros.add(new Hero(id, new Vector(x, y), shieldLife, isControlled)); break;
@@ -777,7 +878,6 @@ class Player {
         }
     }
     
-    
     private static void Think() {
     	//find opAttacker
         opAttacker = getOpAttacker(opHeros, myBase);
@@ -788,7 +888,7 @@ class Player {
         
         //Attack
         //attack if gameTurn is equal or more than turnToStartAttack
-        if(myBase.mana >= 320 || attacking || gameTurn > turnToStartAttack) {
+        if(myBase.mana >= 250 || attacking || gameTurn > turnToStartAttack) {
         	heroAttacker = getHeroAttacker();
         	if(!inRange(myBase.pos, heroAttacker.pos, Base.RADIUS)) {
 	        	heroAttacker.command = "Attacking";
@@ -800,12 +900,10 @@ class Player {
         
         //if there is opAttacker then reduce the farm range and switch to closeDefensePoints
         if(opAttacker != null) {
-        	numberOfTurnsToSim = 8;
         	whatToDoWhenHaveOpAttacker(opAttacker, (heroAttacker != null && heroAttacker.command.equals("Attacking")));
         }
         //if there is no opAttacker then increase the farm range and switch to farDefensePoints
         else if(opAttacker == null) {
-        	numberOfTurnsToSim = 15;
         	whatToDoWhenNotHaveOpAttacker((heroAttacker != null && heroAttacker.command.equals("Attacking")));
         }
         
@@ -815,69 +913,112 @@ class Player {
         monstersIdsWhoCannotBeKilled = new ArrayList<Integer>();
         
         //if one of my heros isControlled or got wind then push op hero attacker with wind
-        nextTurnWindOpAttacker = shouldWindOrControlOpAttacker(heroAttacker);
+        Hero heroControlled = shouldWindOrControlOpAttacker(heroAttacker);
+        
+        if(heroControlled != null) nextTurnWindOpAttacker = 3;
+        
+        int herosToDefend = 0;
         
         //Defense
         for(; i < myHeros.size(); i++){
         	
-        	if((i == 0 || (heroAttacker != null && i == 1)) && opAttacker != null) {
-	        	//if opAttacker can just push monster to damage my base then shield this monster
-	        	Monster monsterToShield = getMonsterToShieldSoOpAttackerWontPushItToDamageMyBase(opAttacker);
-	        	boolean hasShield = tryShieldMonsterFromOpAttacker(monsterToShield);
-	        	if(hasShield) continue;
+        	herosToDefend++;
+        	
+        	if(opAttacker != null && herosToDefend == 2) {
+            	int numberOfTurnsForward = 1;
+            	
+            	boolean canOpPushMonster = false;
+            	
+            	while(numberOfTurnsForward <= 2) {
+                    for(Monster monster : monsters) {
+                    	if(monster.handled || !myBase.isMonsterInside(monster.pos)) continue;
+                    	
+                    	Vector opMonsterToWind = opAttacker.getPosToGoToActionMonster(monster, Hero.WIND_RANGE);
+                    	
+                    	
+                    	if(numberOfTurnsToReach(getDist(opAttacker.pos, opMonsterToWind) - Hero.WIND_RANGE, Hero.DIST_PER_TURN) == numberOfTurnsForward) {
+                        	Vector monsterFutureLocation = monster.getPosNextXTurns(numberOfTurnsForward);
+                        	
+                        	canOpPushMonster = true;
+                        	
+                        	
+                        	//check if one of my heros can reach the monster and wind it in time
+                        	for(Hero hero : myHeros) {
+                        		if(!hero.isAvailable()) continue;
+                        		if(numberOfTurnsToReach(getDist(hero.pos, monsterFutureLocation) - Hero.WIND_RANGE, Hero.DIST_PER_TURN) <= numberOfTurnsForward) {
+                        			if(hero.canWind(monster)) {
+                        				hero.command = "SPELL WIND " + opBase.pos.toIntString() + " B2";
+                        				myBase.mana -= SPELL_COST;
+                        				hero.usingSpell = true;
+                        				monster.handled = true;
+                        				break;
+                        			}
+                        			else if(numberOfTurnsForward > 0 && monster.shieldLife - numberOfTurnsForward <= 0){
+                        				hero.command = "MOVE " + monsterFutureLocation.toIntString() + " A2";
+                        				monster.handled = true;
+                        				break;
+                        			}
+                        		}
+                        	}
+                        	
+                        	if(monster.handled) continue;
+                        	
+                        	//if opAttacker will wind it now I can't do anything about it
+                        	if(numberOfTurnsForward == 0) continue;
+                        	
+                        	//check if one of my heros can reach the opAttacker windRange and wind with the monster
+                        	for(Hero hero : myHeros) {
+                        		if(!hero.isAvailable()) continue;
+                        		// + 1 because you are moving before wind pushes, DON'T KNOW ABOUT THIS
+                        		if(numberOfTurnsToReach(getDist(hero.pos, opMonsterToWind), Hero.DIST_PER_TURN) <= numberOfTurnsForward) {
+                    				hero.command = "MOVE " + opMonsterToWind.toIntString() + " C2";
+                    				monster.handled = true;
+                    				break;
+                        		}
+                        	}
+                    	}
+                    }
+            		if(canOpPushMonster) break;
+            		numberOfTurnsForward++;
+            	}
         	}
 
             //push op hero attacker with wind because the op is controlling us
             if(nextTurnWindOpAttacker > 0 && opAttacker != null && i + 1 == myHeros.size() &&
             	myBase.mana >= SPELL_COST){
-            	boolean hasPushOpAttacker = false;
+            	//maybe I need to shield myself instead
             	
-            	if(opAttacker.shieldLife == 0) {
-	                for(Hero hero : myHeros){
-	                    if(!hero.isAvailable()) continue;
-	                    if(!inRange(opAttacker.pos, hero.pos, Hero.WIND_RANGE)) continue;
-	                    
-	                    hero.command = "SPELL WIND " + " " + opBase.pos.toIntString() + " PUSH ATTACKER";
-	                    hasPushOpAttacker = true;
+            	boolean hasShieldHeros = false;
+            	
+            	for(Hero hero : myHeros) {
+            		if(hero.canCastShield(hero)) {
+            			hero.command = "SPELL SHIELD " + hero.id;
 	                    myBase.mana -= SPELL_COST;
 	                    hero.usingSpell = true;
-	                    break;
-	                }
-	                
+	                    hasShieldHeros = true;
+            		}
             	}
-
-                if(hasPushOpAttacker){
+            	
+            	if(hasShieldHeros) {
+            		nextTurnWindOpAttacker--;
+                    continue;
+            	}
+            	
+                if(tryPushOpAttacker()){
                     nextTurnWindOpAttacker--;
                     continue;
                 }
                 else {
-                	boolean hasControlOpAttacker = false;
-                	
-                	if(opAttacker.shieldLife == 0) {
-    	                for(Hero hero : myHeros){
-    	                    if(!hero.isAvailable()) continue;
-    	                    if(!inRange(opAttacker.pos, hero.pos, Hero.CONTROL_RANGE)) continue;
-    	                    
-    	                    hero.command = "SPELL CONTROL " + opAttacker.id + " " + opBase.pos.toIntString() + " CONTROL ATTACKER";
-    	                    hasPushOpAttacker = true;
-    	                    myBase.mana -= SPELL_COST;
-    	                    hero.usingSpell = true;
-    	                    break;
-    	                }
-                	}
-                	
-                	if(hasControlOpAttacker) {
+                	if(tryControlOpAttacker()) {
                         nextTurnWindOpAttacker--;
                         continue;
                 	}
-
-                	
-                	//maybe I need to shield myself instead
                 }
             }
 
             //findMonsterWithSmallestNumberOfTurnsToDamageBase
             Monster closestMonster = findMonsterWithSmallestNumberOfTurnsToDamageBase(monsters);
+        
             
             //if have no monster that going to damage my base
             if(closestMonster == null){
@@ -896,18 +1037,19 @@ class Player {
                 if(!hero.isAvailable()) continue;
                 
                 Vector pos = hero.getPosToGoToActionMonster(closestMonster, Hero.DAMAGE_RANGE);
-                int numberOfTurnsToReachMonster = (int) Math.ceil((getDist(hero.pos, pos) - Hero.DAMAGE_RANGE) / Hero.DIST_PER_TURN);
-                if(numberOfTurnsToReachMonster < 0) numberOfTurnsToReachMonster = 0;
+                int numberOfTurnsToReachMonster = Player.numberOfTurnsToReach(getDist(hero.pos, pos) - Hero.DAMAGE_RANGE, Hero.DIST_PER_TURN);
                 
+                if(closestMonster.id == 32) System.err.println("pos: " + pos);
+                if(closestMonster.id == 32) System.err.println("numberOfTurnsToReachMonster: " + numberOfTurnsToReachMonster);
                 
                 
                 if(numberOfTurnsToReachMonster < smallestNumberOfTurnsToReachMonster){
-                    //hero won't be fast enough to kill monster
+
+                	//hero won't be fast enough to kill monster
                     if((closestMonster.numberOfTurnsToDamageMyBase - numberOfTurnsToReachMonster) * Hero.DAMAGE < closestMonster.health){
                     	// check if hero can wind it
                     	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.WIND_RANGE);
-                    	int numberOfTurnsToReachMonsterWind = (int) Math.ceil((getDist(hero.pos, pos) - Hero.WIND_RANGE) / Hero.DIST_PER_TURN);
-                    	if(numberOfTurnsToReachMonsterWind < 0) numberOfTurnsToReachMonsterWind = 0;
+                    	int numberOfTurnsToReachMonsterWind =  Player.numberOfTurnsToReach(getDist(hero.pos, pos) - Hero.WIND_RANGE, Hero.DIST_PER_TURN);
                         
                         if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterWind <= 0 &&
                         closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterWind &&
@@ -919,8 +1061,7 @@ class Player {
                         }
                         else {
                         	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.CONTROL_RANGE);
-                        	int numberOfTurnsToReachMonsterControl = (int) Math.ceil((getDist(hero.pos, pos) - Hero.CONTROL_RANGE) / Hero.DIST_PER_TURN);
-                        	if(numberOfTurnsToReachMonsterControl < 0) numberOfTurnsToReachMonsterControl = 0;
+                        	int numberOfTurnsToReachMonsterControl = Player.numberOfTurnsToReach(getDist(hero.pos, pos) - Hero.CONTROL_RANGE, Hero.DIST_PER_TURN);
                             
                             if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterControl <= 0 &&
                                closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterControl + 1 &&
@@ -971,6 +1112,20 @@ class Player {
                 continue;
             }
             
+            
+            //check if I have enough time to shield my hero before needing to go to kill monster
+            if(heroControlled != null && ((closestMonster.numberOfTurnsToDamageMyBase - smallestNumberOfTurnsToReachMonster) - 1) * Hero.DAMAGE >= closestMonster.health) {
+            	if(closestHero.canCastShield(heroControlled)) {
+            		closestHero.command = "SPELL SHIELD " + heroControlled.id;
+                    myBase.mana -= SPELL_COST;
+                    closestHero.usingSpell = true;
+                    
+                    //mark the monster as handled and TODO: preform sim
+                    closestMonster.handled = true;
+                    closestHero.monstersHandling.add(closestMonster.id);
+                    continue;
+        		}
+            }
             
             
             //check if just damage will be enough
@@ -1024,19 +1179,7 @@ class Player {
 	            }
             }
             else{
-            	
-            	int rangeFromRangeToPushMonster = Base.RADIUS;
-            	if(opAttacker != null && inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 2 + Hero.WIND_RANGE)) rangeFromRangeToPushMonster = Base.RADIUS + 2000;
-            	// if monster is inside myBase and I can wind it and
-            	//the monster has more than Hero.DAMAGE life then do it
-
-//            	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 && opAttacker != null && !inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 3 + Hero.WIND_RANGE) &&
-//                inRange(myBase.pos, closestMonster.pos, Base.RADIUS + 1500) && closestMonster.health > Hero.DAMAGE &&
-//                inRange(closestHero.pos, closestMonster.pos, Hero.CONTROL_RANGE)) controlMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, closestMonster);
-            	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 &&
-                inRange(myBase.pos, closestMonster.pos, rangeFromRangeToPushMonster) && closestMonster.health > Hero.DAMAGE * 2 &&
-                inRange(closestHero.pos, closestMonster.pos, Hero.WIND_RANGE)) windMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster);
-                else damageMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster, closestMonster);
+            	damageMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster, closestMonster);
             }
             
 //            monsters.forEach(monster -> {
@@ -1055,40 +1198,40 @@ class Player {
 	        
 	        prevPosMyAttacker = heroAttacker.pos;
         }
-        
-        
     }
     
 
-    private static boolean tryShieldMonsterFromOpAttacker(Monster monsterToShield) {
-    	if(monsterToShield == null) return false;
+    private static boolean tryControlOpAttacker() {
+    	if(opAttacker.shieldLife > 0) return false;
     	
-		System.err.println("monsterToShield: " + monsterToShield);
-		
-		for(Hero hero : myHeros) {
-			if(!hero.isAvailable() || !inRange(hero.pos, monsterToShield.pos, Hero.SHIELD_RANGE)) continue;
-			
-    		hero.command = "SPELL SHIELD " + monsterToShield.id + " SHIELD!";
-    		myBase.mana -= SPELL_COST;
-    		monsterToShield.handled = true;
-    		hero.monstersHandling.add(monsterToShield.id);
-    		hero.usingSpell = true;
-    		return true;
-		}
-		
-		return false;
+        for(Hero hero : myHeros){
+            if(!hero.isAvailable()) continue;
+            if(!inRange(opAttacker.pos, hero.pos, Hero.CONTROL_RANGE)) continue;
+            
+            hero.command = "SPELL CONTROL " + opAttacker.id + " " + opBase.pos.toIntString() + " CONTROL ATTACKER";
+            myBase.mana -= SPELL_COST;
+            hero.usingSpell = true;
+            return true;
+        }
+        
+        return false;
 	}
 
-
-	private static void controlMonsterOutOfMyBase(Hero closestHero, Vector posToGoToACTIONMonster,
-			Monster closestMonster) {
-		// TODO Auto-generated method stub
+	private static boolean tryPushOpAttacker() {
+    	if(opAttacker.shieldLife > 0) return false;
     	
-    	simBestPos(closestHero, posToGoToACTIONMonster, Hero.CONTROL_RANGE, 0, -1);
-		  
-		closestHero.command = "SPELL CONTROL " + closestMonster.id + " " + opBase.pos.toIntString();
-		myBase.mana -= SPELL_COST;
-		closestHero.usingSpell = true;
+        for(Hero hero : myHeros){
+            if(!hero.isAvailable()) continue;
+            if(!inRange(opAttacker.pos, hero.pos, Hero.WIND_RANGE)) continue;
+            
+            hero.command = "SPELL WIND " + " " + opBase.pos.toIntString() + " PUSH ATTACKER";
+            
+            myBase.mana -= SPELL_COST;
+            hero.usingSpell = true;
+            return true;
+        }
+        
+        return false;
 	}
 
 
@@ -1100,13 +1243,6 @@ class Player {
     	int numberOfTurnsToActionMonster = smallestNumberOfTurnsToReachMonster + (int) Math.ceil(closestMonster.health * 1.0 / Hero.DAMAGE);
     	
     	if(opAttacker != null) numberOfTurnsToActionMonster = Math.min(numberOfTurnsToActionMonster, 5);
-    	
-//    	System.err.println("closestMonster.health * 1.0 / Hero.DAMAGE: " + (closestMonster.health * 1.0 / Hero.DAMAGE));
-//    	System.err.println("(int) Math.ceil(closestMonster.health * 1.0 / Hero.DAMAGE): " + ((int) Math.ceil(closestMonster.health * 1.0 / Hero.DAMAGE)));
-//    	
-//    	System.err.println("numberOfTurnsToActionMonster: " + numberOfTurnsToActionMonster);
-//    	System.err.println("closestMonster: " + closestMonster);
-//    	System.err.println("closestHero: " + closestHero);
     	
     	simBestPos(closestHero, posToGoToACTIONMonster, Hero.DAMAGE_RANGE, numberOfTurnsToActionMonster, closestMonster.id);
     	
@@ -1120,26 +1256,8 @@ class Player {
 //    	closestMonster.handled = true;
 	}
 
-
-	private static void windMonsterOutOfMyBase(Hero closestHero, Vector posToGoToACTIONMonster,
-			int smallestNumberOfTurnsToReachMonster) {
-		
-		simBestPos(closestHero, posToGoToACTIONMonster, Hero.WIND_RANGE, 0, -1);
-		  
-		for(int monsterIndex = 0; monsterIndex < monsters.size(); monsterIndex++) {
-			monsters.get(monsterIndex).changePos(savedMonsters.get(monsterIndex));
-			monsters.get(monsterIndex).shieldLife = savedMonsters.get(monsterIndex).shieldLife;
-		}
-		  
-		closestHero.command = "SPELL WIND " + opBase.pos.toIntString();
-		myBase.mana -= SPELL_COST;
-		closestHero.usingSpell = true;
-	}
-
-
 	private static void goToMonsterToControlIt(Hero closestHero, Vector posToGoToACTIONMonster,
 			int smallestNumberOfTurnsToMonsterControl, Monster closestMonster) {
-		
 		int numberOfTurnsToActionMonster = smallestNumberOfTurnsToMonsterControl;
 		
 		if(opAttacker != null) numberOfTurnsToActionMonster = Math.min(numberOfTurnsToActionMonster, 5);
@@ -1154,12 +1272,12 @@ class Player {
     	}
 		
 		closestHero.command = "MOVE " + posToGoToACTIONMonster.toIntString() + " WILL CONTROL MONSTER";
+		myBase.mana -= SPELL_COST;
+		closestHero.usingSpell = true;
 	}
-
 
 	private static void controlMonster(Hero closestHero, Vector posToGoToACTIONMonster,
 			int smallestNumberOfTurnsToMonsterControl, Monster closestMonster) {
-		
 		
 //		System.err.println("before sim 4: " + closestMonster);
 		simBestPos(closestHero, posToGoToACTIONMonster, Hero.CONTROL_RANGE, 0, -1);
@@ -1175,10 +1293,8 @@ class Player {
 		closestHero.usingSpell = true;
 	}
 
-
 	private static void goToMonsterToWindIt(Hero closestHero, Vector posToGoToACTIONMonster,
 			int smallestNumberOfTurnsToMonsterWind, Monster closestMonster) {
-		
 		int numberOfTurnsToActionMonster = smallestNumberOfTurnsToMonsterWind;
 		
 		if(opAttacker != null) numberOfTurnsToActionMonster = Math.min(numberOfTurnsToActionMonster, 5);
@@ -1193,11 +1309,13 @@ class Player {
     	}
 		
 		closestHero.command = "MOVE " + posToGoToACTIONMonster.toIntString() + " WILL WIND MONSTER";
+		myBase.mana -= SPELL_COST;
+		closestHero.usingSpell = true;
 	}
-
 
 	private static void windMonster(Hero closestHero, Vector posToGoToACTIONMonster,
 			int smallestNumberOfTurnsToMonsterWind) {
+		
 //		System.err.println("before sim 6: " + closestMonster);
 		simBestPos(closestHero, posToGoToACTIONMonster, Hero.WIND_RANGE, 0, -1);
 //		System.err.println("after sim 6: " + closestMonster);
@@ -1213,27 +1331,6 @@ class Player {
 	}
 
 	
-	
-	
-	
-	
-	
-	
-
-	private static Monster getMonsterToShieldSoOpAttackerWontPushItToDamageMyBase(Hero opAttacker) {
-    	Monster monsterToDefend = null;
-    	
-		for(Monster monster : monsters) {
-			Vector nextPos = stepTo(monster.pos, myBase.pos, Monster.DIST_PER_TURN);
-			if(monster.shieldLife == 0 && inRange(nextPos, opAttacker.pos, Hero.WIND_RANGE) &&
-			   inRange(nextPos, myBase.pos, Hero.WIND_PUSH_RANGE + Monster.DIST_TO_DAMAGE_BASE)) {
-				if(monsterToDefend == null) monsterToDefend = monster;
-				else return null;
-			}
-		}
-		
-		return monsterToDefend;
-	}
 
 	
     private static Vector simBestPos(Hero hero, Vector posMonsterInFuture, Monster monster, int ACTION_RANGE) {
@@ -1318,7 +1415,7 @@ class Player {
     	double addToEval = 0;
     	
     	boolean finishSim = numberOfTurnsToReachActionMonster == 0; //hero is in goalPos
-    	
+
     	if(!finishSim) {
 			//damage monsters around hero
 	    	for(Monster monster : monsters) {
@@ -1331,19 +1428,16 @@ class Player {
 	    				addToEval += 20;
 	    				monster.handled = true;
 	    				hero.monstersHandling.add(monster.id);
-	    				if(targetMonsterID == monster.id) { //hero has killed the monster he wanted
-
-	    				}
 	    			}
 	    		}
 	    	}
     	}
     	else {
     		if(ACTION_RANGE == Hero.DAMAGE_RANGE) {
+    			
     			//damage monsters around hero
     	    	for(Monster monster : monsters) {
     	    		if(monster.health <= 0) continue;
-    	    		
     	    		if(inRange(monster.pos, hero.pos, Hero.DAMAGE_RANGE)) {
     	    			addToEval += 2;
     	    			monster.health -= Hero.DAMAGE;
@@ -1354,6 +1448,8 @@ class Player {
     	    			}
     	    		}
     	    	}
+    	    	
+    	    	
     		}
     		else if(ACTION_RANGE == Hero.WIND_RANGE) {
     			//damage monsters around hero
@@ -1413,30 +1509,88 @@ class Player {
     private static void whatToDoWhenHaveOpAttacker(Hero opAttacker, boolean hasAnAttacker) {
     	//if there is opAttacker then reduce the farm range and switch to closeDefensePoints
         thereIsOpAttacker = true;
-        if(!hasAnAttacker) myBase.currentDefensePoints = myBase.closeDefensePoints;
-        else myBase.currentDefensePoints = myBase.closeDefensePointsWhenHaveAttacker;
+        myBase.calcDefensePoints((int) getDist(opAttacker.pos, myBase.pos), hasAnAttacker);
         FARM_RANGE = 2000;
-        if(inRange(opAttacker.pos, myBase.pos, Base.RADIUS + 1000)) FARM_RANGE = 500;
+        if(inRange(opAttacker.pos, myBase.pos, Base.RADIUS - 2000)) FARM_RANGE = 500;
+        
+        //sim oppnent to check if he can push monster into my base in the next 2 turns
+        //if yes then push the monster or get close to him
+        
+        //1) foreach monster get her position after N turns
+        //2) check if opAttacker will go to this pos will he be able to push her in the next N turns
+        //3) if yes and the monster will be push to close radius to my base then check if I will be able to push it back in time
+        //4) if not and the monster will not immediately damage my base and I can reach opAttacker before he wind her in the range of his wind then do it
+        //5) if not then maybe try to shield this monster TODO
+        
+    	int numberOfTurnsForward = 0;
+    	
+        for(Monster monster : monsters) {
+        	if(monster.handled || !myBase.isMonsterInside(monster.pos)) continue;
+        	
+        	Vector opMonsterToWind = opAttacker.getPosToGoToActionMonster(monster, Hero.WIND_RANGE);
+
+        	if(numberOfTurnsToReach(getDist(opAttacker.pos, opMonsterToWind) - Hero.WIND_RANGE, Hero.DIST_PER_TURN) == numberOfTurnsForward) {
+            	Vector monsterFutureLocation = monster.getPosNextXTurns(numberOfTurnsForward);
+            	//check if one of my heros can reach the monster and wind it in time
+            	for(Hero hero : myHeros) {
+            		if(!hero.isAvailable()) continue;
+            		
+            		if(numberOfTurnsToReach(getDist(hero.pos, monsterFutureLocation) - Hero.WIND_RANGE, Hero.DIST_PER_TURN) <= numberOfTurnsForward) {
+            			if(hero.canWind(monster)) {
+            				hero.command = "SPELL WIND " + opBase.pos.toIntString() + " B";
+            				myBase.mana -= SPELL_COST;
+            				hero.usingSpell = true;
+            				monster.handled = true;
+            				hero.monstersHandling.add(monster.id);
+            				break;
+            			}
+            			else if(numberOfTurnsForward > 0 && monster.shieldLife - numberOfTurnsForward <= 0){
+            				hero.command = "MOVE " + monsterFutureLocation.toIntString() + " A";
+            				monster.handled = true;
+            				hero.monstersHandling.add(monster.id);
+            				break;
+            			}
+            		}
+            	}
+            	
+            	if(monster.handled) continue;
+            	
+            	//if opAttacker will wind it now I can't do anything about it
+            	if(numberOfTurnsForward == 0) continue;
+            	
+            	//check if one of my heros can reach the opAttacker windRange and wind with the monster
+            	for(Hero hero : myHeros) {
+            		if(!hero.isAvailable()) continue;
+            		
+            		// + 1 because you are moving before wind pushes, DON'T KNOW ABOUT THIS
+            		if(numberOfTurnsToReach(getDist(hero.pos, opMonsterToWind), Hero.DIST_PER_TURN) <= numberOfTurnsForward) {
+        				hero.command = "MOVE " + opMonsterToWind.toIntString() + " C";
+        				monster.handled = true;
+        				hero.monstersHandling.add(monster.id);
+        				break;
+            		}
+            	}
+        	}
+        }
     }
     
     private static void whatToDoWhenNotHaveOpAttacker(boolean hasAnAttacker) {
     	//if there is no opAttacker then increase the farm range and switch to farDefensePoints
     	 thereIsOpAttacker = false;
-         if(!hasAnAttacker) myBase.currentDefensePoints = myBase.farDefensePoints;
-         else myBase.currentDefensePoints = myBase.farDefensePointsWhenHaveAttacker;
-         FARM_RANGE = 3000;
+    	 myBase.calcDefensePoints(-1, hasAnAttacker);
+         FARM_RANGE = 4000;
     }
     
-    private static int shouldWindOrControlOpAttacker(Hero heroAttacker) {
-        //if one of my heros isControlled or got wind then push op hero attacker with wind
-        //TODO:
+    private static Hero shouldWindOrControlOpAttacker(Hero heroAttacker) {
+        //if one of my heros isControlled
+        //TODO: or got wind then push op hero attacker with wind
         for(Hero hero : myHeros){
             if(hero.isControlled && (heroAttacker == null || heroAttacker.id != hero.id)){
-                return 3;
+                return hero;
             }
         }
     	
-    	return nextTurnWindOpAttacker;
+    	return null;
     }
     
     
@@ -1446,22 +1600,51 @@ class Player {
 	private static void attackStrategy(Hero heroAttacker) {
 		
 //		System.err.println("have heroAttacker");
-
-
-      	//if can push monster to immedately damage opBase
+		
+		if(heroAttacker.isControlled) {
+			isControllingMe = true;
+			heroAttacker.command = "WAIT CONTROLED!";
+			return;
+		}
+		
+		//if can shield monster to damage opBase for sure
     	for(Monster monster : monsters) {
     		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST &&
-    				monster.health >= 2 &&
-    				inRange(monster.pos, heroAttacker.pos, Hero.WIND_RANGE) &&
-    				inRange(stepTo(monster.pos, opBase.pos, Hero.WIND_PUSH_RANGE), opBase.pos, Monster.DIST_TO_DAMAGE_BASE)) {
-    			heroAttacker.command = "SPELL WIND " + opBase.pos.toIntString();
+    				monster.health - (numberOfTurnsToReach(getDist(monster.pos, opBase.pos) - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN) * Hero.DAMAGE * 3) > 0 &&
+    				inRange(monster.pos, heroAttacker.pos, Hero.SHIELD_RANGE)) {
+    			heroAttacker.command = "SPELL SHIELD " + monster.id + " SHIELD GOAL!!";
     			myBase.mana -= SPELL_COST;
     			return;
     		}
     	}
 		
-		if(heroAttacker.isControlled) isControllingMe = true;
-
+      	//if can push monster to immedately damage opBase
+    	for(Monster monster : monsters) {
+    		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST &&
+    				monster.health >= 2 &&
+    				inRange(monster.pos, heroAttacker.pos, Hero.WIND_RANGE) &&
+    				inRange(monster.pos, opBase.pos, Monster.DIST_TO_DAMAGE_BASE + Hero.WIND_PUSH_RANGE)) {
+    			heroAttacker.command = "SPELL WIND " + opBase.pos.toIntString() + " GOAL!!";
+    			myBase.mana -= SPELL_COST;
+    			return;
+    		}
+    	}
+		
+		if(myBase.mana < SPELL_COST * 3) {
+			if(!inRange(opBase.pos, heroAttacker.pos, Base.RADIUS + 3000)) {
+				heroAttacker.command = "MOVE " + opBase.pos.toIntString();
+				return;
+			}
+			else {
+				Vector posToFarm = getBestPosToFarm(heroAttacker.pos, 4000);
+				if(posToFarm != null) {
+					heroAttacker.command = "MOVE " + posToFarm.toIntString() + " FARM";
+					return;
+				}
+			}
+		}
+		
+		
 		//if opDefenders are controlling me
 		if(heroAttacker.shieldLife == 0 && isControllingMe && myBase.mana >= SPELL_COST * 3) {
 			heroAttacker.command = "SPELL SHIELD " + heroAttacker.id;
@@ -1481,9 +1664,8 @@ class Player {
     	//if see monster that is really inside op base then shield it
     	for(Monster monster : monsters) {
     		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST * 3 &&
-    				monster.isFutureThreatToBase(opBase) &&
     				inRange(monster.pos, opBase.pos, Base.RADIUS - 1000) &&
-    				monster.health >= 14 &&
+    				monster.health - (numberOfTurnsToReach(getDist(monster.pos, opBase.pos) - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN) * Hero.DAMAGE) > 0 &&
     				inRange(monster.pos, heroAttacker.pos, Hero.SHIELD_RANGE)) {
     			heroAttacker.command = "SPELL SHIELD " + monster.id;
     			myBase.mana -= SPELL_COST;
@@ -1495,11 +1677,9 @@ class Player {
     	//if can push monster inside op base then do it
     	for(Monster monster : monsters) {
     		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST * 3 &&
-    				monster.health >= 5 &&
+    				monster.health - (numberOfTurnsToReach(Base.RADIUS - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN) * 0.5 * Hero.DAMAGE) > 0 &&
     				inRange(monster.pos, heroAttacker.pos, Hero.WIND_RANGE) &&
-    				inRange(stepTo(monster.pos, opBase.pos, Hero.WIND_PUSH_RANGE), opBase.pos, Base.RADIUS - 500)) {
-    			
-    			Vector posToPushMonsterTo = opBase.pos;
+    				inRange(monster.pos, opBase.pos, Base.RADIUS + Hero.WIND_PUSH_RANGE)) {
     			
     			if(getDist(monster.pos, opBase.pos) > getDist(heroAttacker.pos, opBase.pos)) {
 	    	        Vector center = heroAttacker.pos;
@@ -1508,10 +1688,12 @@ class Player {
 	    	        int radius = Hero.WIND_RANGE;
 	
 	    	        Vector vector = new Vector(target.x - center.x, target.y - center.y).normalize();
-	    	        posToPushMonsterTo = new Vector(center.x + (vector.x * radius), center.y + (vector.y * radius));
+	    	        Vector posToPushMonsterTo = new Vector(center.x + (vector.x * radius), center.y + (vector.y * radius));
+	    	        heroAttacker.command = "SPELL WIND " + posToPushMonsterTo.toIntString() + " DOUBLE WIND!";
     			}
+    			else heroAttacker.command = "SPELL WIND " + opBase.pos.toIntString();
     			
-    			heroAttacker.command = "SPELL WIND " + posToPushMonsterTo.toIntString();
+    			
     			myBase.mana -= SPELL_COST;
     			return;
     		}
@@ -1521,9 +1703,8 @@ class Player {
     	//if see monster that going to enter op base then shield it
     	for(Monster monster : monsters) {
     		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST * 3 &&
-    				monster.isFutureThreatToBase(opBase) &&
     				inRange(monster.pos, opBase.pos, Base.RADIUS) &&
-    				monster.health >= 14 &&
+    				monster.health - (numberOfTurnsToReach(Base.RADIUS - Monster.DIST_TO_DAMAGE_BASE, Monster.DIST_PER_TURN) * Hero.DAMAGE) > 0 &&
     				inRange(monster.pos, heroAttacker.pos, Hero.SHIELD_RANGE)) {
     			heroAttacker.command = "SPELL SHIELD " + monster.id;
     			myBase.mana -= SPELL_COST;
@@ -1534,7 +1715,7 @@ class Player {
         //if can control monster to op base then do it
     	for(Monster monster : monsters) {
     		if(monster.shieldLife == 0 && myBase.mana >= SPELL_COST * 3 &&
-    				monster.health >= 5 &&
+    				monster.health >= 6 &&
     				!monster.isFutureThreatToBase(opBase) &&
     				!monstorsUnderMyControlIDs.contains(monster.id) &&
     				inRange(monster.pos, heroAttacker.pos, Hero.CONTROL_RANGE)) {
@@ -1594,33 +1775,56 @@ class Player {
     	return null;
 	}
 
+    private static Hero getOpAttacker(ArrayList<Hero> opHeros, Base myBase){
+        for(Hero opHero : opHeros){
+            //if there is opHero close to my base then return him
+            if(getDist(opHero.pos, myBase.pos) <= Base.RADIUS + 2000) return opHero;
+        }
+
+        return null;
+    }
+    
 
 	private static void whatToDoWhenThereIsNoThreatFromMonster() {
+		
     	for(Hero hero : myHeros){
             if(!hero.isAvailable()) continue;
             
             Vector defensePoint = hero.getDefensePoint(myBase);
             
-            Vector bestPosToFarm = getBestPosToFarm(defensePoint);
-
+            Vector bestPosToFarm = getBestPosToFarm(hero.pos, FARM_RANGE);
+            
+            //Vector res = solve(hero, defensePoint);
+            
             //move to farm monster
-            if(bestPosToFarm != null) hero.command = "MOVE " + bestPosToFarm.toIntString() + " FARM";
+            if(bestPosToFarm != null) {
+            	
+                //mark monsters as farmed/handled
+                for(Monster monster : monsters) {
+                	if(monster.handled) continue;
+                	
+                	if(inRange(monster.pos, bestPosToFarm, Hero.DAMAGE_RANGE)) monster.handled = true;
+                }
+                
+            	hero.command = "MOVE " + bestPosToFarm.toIntString() + " FARM";
+            }
             //move to defensive point
             else hero.command = "MOVE " + defensePoint.toIntString() + " Defense Point";
         }
 	}
+	
     
     public static Vector bestPosToFarm;
     public static int mostMonstersToFarmAtOnce;
-    static ArrayList<Monster> monstersFarmed = new ArrayList<>();
+    public static ArrayList<Monster> monstersFarmed;
     
-    private static Vector getBestPosToFarm(Vector defensePoint){
+    private static Vector getBestPosToFarm(Vector center, int FARM_RANGE){
     	
     	bestPosToFarm = null;
     	mostMonstersToFarmAtOnce = 0;
     	monstersFarmed = new ArrayList<>();
 		
-    	getBestPosToFarm(defensePoint, 0, new ArrayList<>());
+    	getBestPosToFarm(center, FARM_RANGE, 0, new ArrayList<>(), opBase);
     	
     	//mark monsters as farmed
     	for(Monster monster : monstersFarmed) monster.handled = true;
@@ -1628,8 +1832,7 @@ class Player {
 	    return bestPosToFarm;
     }
     
-    private static void getBestPosToFarm(Vector defensePoint, int i, ArrayList<Monster> res) {
-    	
+    private static void getBestPosToFarm(Vector center, int FARM_RANGE, int i, ArrayList<Monster> res, Base base) {
     	if(res.size() > mostMonstersToFarmAtOnce) {
     		mostMonstersToFarmAtOnce = res.size();
     		bestPosToFarm = Vector.getAvgVectorOfAllVectors(res);
@@ -1643,9 +1846,9 @@ class Player {
 			//if have this monster already
 			if(res.contains(monster)) continue;
 
-    		if(monster.handled || monster.isFutureThreatToBase(opBase) || 
-	        !inRange(monster.pos, defensePoint, FARM_RANGE) ||
-	        monstorsUnderMyControlIDs.contains(monster.id)) continue;
+			if(monster.handled || monster.isFutureThreatToBase(base) || 
+		        !inRange(monster.pos, center, FARM_RANGE) ||
+		        monstorsUnderMyControlIDs.contains(monster.id)) continue;
     		
     		boolean addMonster = true;
     		
@@ -1658,30 +1861,188 @@ class Player {
     		
     		if(addMonster) {
     			res.add(monster);
-    			getBestPosToFarm(defensePoint, i + 1, res);
+    			getBestPosToFarm(center, FARM_RANGE, i + 1, res, base);
     			res.remove(res.size() - 1);
     		}
     	}
     }
+    
+    private static Vector solve(Hero hero, Vector defensePoint) {
+    	
+    	int mostMana = 0;
+    	Vector bestPos = null;
+    	double dist = Double.MAX_VALUE;
+    	
+    	
+    	//move hero
+    	for(Monster monster : monsters) {
+    		if(monster.handled || monster.isFutureThreatToBase(opBase) || 
+    		   !inRange(monster.pos, defensePoint, FARM_RANGE) ||
+    		   monstorsUnderMyControlIDs.contains(monster.id)) continue;
+    		
+        	bestPosToFarm = null;
+        	mostMonstersToFarmAtOnce = 0;
+        	monstersFarmed = new ArrayList<>();
+        	ArrayList<Monster> res = new ArrayList<>();
+        	res.add(monster);
+    		getAvgPosOfAllMonstersInRangeFromMonster(defensePoint, FARM_RANGE, 0, res, opBase);
+    		
+    		Vector currPos = new Vector(bestPosToFarm);
+    		
+    		System.err.println("currPos: " + currPos);
+    		
+    		int resMana = solve(stepTo(hero.pos, bestPosToFarm, Hero.DIST_PER_TURN), 0, defensePoint);
+    		
+    		
+    		if(mostMana < resMana) {
+    			mostMana = resMana;
+    			bestPos = currPos;
+    			dist = getDist(hero.pos, currPos);
+    		}
+    		
+    		if(mostMana == resMana) {
+    			double currDist = getDist(hero.pos, currPos);
+    			if(dist > currDist) {
+    				dist = currDist;
+        			mostMana = resMana;
+        			bestPos = currPos;
+    			}
+    		}
+    	}
+    	
+    	System.err.println("END");
+    	System.err.println("mostMana: " + mostMana);
+    	System.err.println("bestPos: " + bestPos);
+    	
+    	return bestPos;
+    }
+    
+    private static int solve(Vector heroPos, int depth, Vector defensePoint) {
+    	
+    	int mostManaGained = 0;
+    	int manaGained = 0;
+    	
+    	HashSet<Integer> addHealthTo = new HashSet<>();
+    	ArrayList<Vector> previousPos = new ArrayList<>();
+    	
+    	//get mana
+    	for(Monster monster : monsters) {
+    		//should also skip monsters that is handled by wind or control because they can change dir
+    		if(monster.handled || monster.health <= 0) continue;
+    	
+    		if(inRange(heroPos, monster.pos, Hero.DAMAGE_RANGE)) {
+    			manaGained++;
+    			monster.health -= Hero.DAMAGE_RANGE;
+    			addHealthTo.add(monster.id);
+    			System.err.println("here");
+    		}
+    	}
+    	
+    	//move monsters
+    	for(Monster monster : monsters) {
+    		if(monster.handled || monster.health <= 0) {
+    			previousPos.add(null);
+    			continue;
+    		}
+    		
+    		previousPos.add(monster.pos);
+    		monster.pos = monster.getPosNextXTurns(1);
+    	}
+    	
+    	System.err.println("manaGained: " + manaGained);
 
+    	//move hero
+    	for(Monster monster : monsters) {
+    		if(monster.handled || monster.health <= 0) continue;
+    		
+    		if(depth + 1 == 1) {
+    			int resMana = manaGained;
+    			mostManaGained = Math.max(mostManaGained, resMana);
+    			continue;
+    		}
+    		
+        	bestPosToFarm = null;
+        	mostMonstersToFarmAtOnce = 0;
+        	monstersFarmed = new ArrayList<>();
+        	ArrayList<Monster> res = new ArrayList<>();
+        	res.add(monster);
+    		getAvgPosOfAllMonstersInRangeFromMonster(defensePoint, FARM_RANGE, 0, res, opBase);
+    		
+    		int resMana = manaGained + solve(stepTo(heroPos, bestPosToFarm, Hero.DIST_PER_TURN), depth + 1, defensePoint);
+    		mostManaGained = Math.max(mostManaGained, resMana);
+    	}
+    	
+		//reset monsters info
+		for(int i = 0; i < monsters.size(); i++) {
+			Monster monsterToReset = monsters.get(i);
+			if(addHealthTo.contains(monsterToReset.id)) monsterToReset.health += Hero.DAMAGE_RANGE;
+			
+			Vector prevPos = previousPos.get(i);
+			if(prevPos != null) monsterToReset.pos = prevPos;
+		}
+		
+		return mostManaGained;
+    }
+    
+    private static void getAvgPosOfAllMonstersInRangeFromMonster(Vector center, int FARM_RANGE, int i, ArrayList<Monster> res, Base base) {
+    	if(res.size() > mostMonstersToFarmAtOnce) {
+    		mostMonstersToFarmAtOnce = res.size();
+    		bestPosToFarm = Vector.getAvgVectorOfAllVectors(res);
+    		monstersFarmed = new ArrayList<>();
+    		for(Monster monster : res) monstersFarmed.add(monster);
+    	}
+    	
+    	for(; i < monsters.size(); i++) {
+    		Monster monster = monsters.get(i);
+    		
+			//if have this monster already
+			if(res.contains(monster)) continue;
+
+			if(monster.handled || monster.isFutureThreatToBase(base) || 
+		        !inRange(monster.pos, center, FARM_RANGE) ||
+		        monstorsUnderMyControlIDs.contains(monster.id)) continue;
+    		
+    		boolean addMonster = true;
+    		
+    		for(Monster monsterInList : res) {
+    			if(!inRange(monster.pos, monsterInList.pos, Hero.DAMAGE_RANGE * 2)) {
+    				addMonster = false;
+    				break;
+    			}
+    		}
+    		
+    		if(addMonster) {
+    			res.add(monster);
+    			getAvgPosOfAllMonstersInRangeFromMonster(center, FARM_RANGE, i + 1, res, base);
+    			res.remove(res.size() - 1);
+    		}
+    	}
+    }
+    
+    
     
 	private static Monster findMonsterWithSmallestNumberOfTurnsToDamageBase(ArrayList<Monster> monsters) {
         double smallestNumberOfTurnsToDamageBase = Double.MAX_VALUE;
         Monster closestMonster = null;
-
-        //find the monster with the smallestNumberOfTurnsToDamageBase
+        boolean isShielded = false;
+        
+        //if no shielded ones found the all of them
         for(Monster monster : monsters){
-            if(monster.handled || monster.numberOfTurnsToDamageMyBase > 100 || monstersIdsWhoCannotBeKilled.contains(monster.id) ||
-            monster.numberOfTurnsToDamageMyBase >= smallestNumberOfTurnsToDamageBase) continue;
+            if(monster.handled || monster.numberOfTurnsToDamageMyBase == Integer.MAX_VALUE || monstersIdsWhoCannotBeKilled.contains(monster.id) ||
+            monster.numberOfTurnsToDamageMyBase > smallestNumberOfTurnsToDamageBase) continue;
+            
+            if(monster.numberOfTurnsToDamageMyBase == smallestNumberOfTurnsToDamageBase && isShielded) continue;
             
             //TODO: if there is opAttacker then don't run away from my base if(inRange(monster.pos, myBase.pos, Base.RADIUS + 7000))
 
             smallestNumberOfTurnsToDamageBase = monster.numberOfTurnsToDamageMyBase;
             closestMonster = monster;
+            if(closestMonster.shieldLife > 0) isShielded = true;
         }
         
         return closestMonster;
 	}
+	
 
 	public static Vector getVelocityPos1ToPos2(Vector position, Vector destenation, int speed) {
 		Vector v = new Vector(position, destenation);
@@ -1702,7 +2063,7 @@ class Player {
         return position.add(target);
     }
 	
-    private static boolean inRange(Vector pos1, Vector pos2, int range) {
+    public static boolean inRange(Vector pos1, Vector pos2, int range) {
     	return (pos1.x - pos2.x) * (pos1.x - pos2.x) + (pos1.y - pos2.y) * (pos1.y - pos2.y) <= range * range;
     }
     
@@ -1710,16 +2071,14 @@ class Player {
         return Math.sqrt(Math.pow(pos.x - pos2.x, 2) + Math.pow(pos.y - pos2.y, 2));
     }
 
-    private static Hero getOpAttacker(ArrayList<Hero> opHeros, Base myBase){
-        for(Hero opHero : opHeros){
-            //if there is opHero close to my base then return him
-            if(getDist(opHero.pos, myBase.pos) <= Base.RADIUS + 2000) return opHero;
-        }
-
-        return null;
-    }
-
-    public static void showOutput(ArrayList<Hero> heros){
+	public static int numberOfTurnsToReach(double dist, int speed) {
+		if(dist <= 0) return 0;
+		
+		return (int) Math.ceil(dist / speed);
+	}
+	
+    
+	public static void showOutput(ArrayList<Hero> heros){
 
         //update monstorsUnderMyControlIDs arrayList
         for(int i = monstorsUnderMyControlIDs.size() - 1; i > -1; i-=2){
@@ -1741,143 +2100,151 @@ class Player {
 /*
 
 TODO:
- 
- [X] fix the sim to be not as long as hero not in goal point becuase this can be in 1 turn while the targetedMonster won't die
-    instead make the sim as the smallestNumberOfTurnsToMonster
-    
- [] maybe check if myAttacker can in 1 push of wind send monster which will damage opBase in the same turn
-    (I think that if enemy op is standing there he can push also before the monster will damage the base but only if he knows that I am pushing if not all good with this action)
-
 Easy:
 
-Medium:
- [] don't farm near other hero defense point unless he is busy
+ [] better farm - I should sim the movement of monsters so I would know:
+ 	1) where to go and not to the current position of them
+ 	2) will the monster is going out of the screen so I won't be able to earn a lot from her
+ 	3) choose the monster with most health
+ 	
+ [] if opAttacker can goal monster in this very turn but I also have monster that is going to damage myBase if I won't send this very same hero to deal with her
+    Solution:
+	in this state I should get all the heros which can stop opAttacker and all the heros which can stop the monster and assign one to opAttacker and one to the monster
 
+ [] should push monster only when I have no choice until then try to damage it
+    (I am still afraid from opAttacker that will shield the monster so I can't do it right now, because I want to push her as quick as possible so the opAttacker won't shield it until then)
+	
+ [] when opAttacker is controlling one of my heros then the other hero should defend him if he can	
+	
+ [] the number of turns to sim should not be 5 if opAttacker is visible but it should be according to the distance from him and the actions he can make
+	
+ [] check if opAttacker can make double wind push - HARD	
+	
+Medium:
 
  [] find the closestMonster location when reach to her and not the pos I need to be in
  	and after this try to find if there are monster near it so I can damage them toegther by standing between them
 
 Hard:
 
-	    					Monster closestMonster = findMonsterWithSmallestNumberOfTurnsToDamageBase(monsters);
-	    		            
-	    		            //if have no monster that going to damage my base
-	    		            if(closestMonster == null) {
-	    		            	finishSim = true;
-	    		            	continue;
-	    		            }
-	    		            
-	    		            
-	    		            int smallestNumberOfTurnsToReachMonster = Integer.MAX_VALUE;
-	    		            Vector posToGoToACTIONMonster = null;
-	    		            int smallestNumberOfTurnsToMonsterWind = Integer.MAX_VALUE;
-	    		            int smallestNumberOfTurnsToMonsterControl = Integer.MAX_VALUE;
-	    		                
-    		                Vector pos = hero.getPosToGoToActionMonster(closestMonster, Hero.DAMAGE_RANGE);
-    		                int numberOfTurnsToReachMonster = (int) Math.ceil((getDist(hero.pos, pos) - Hero.DAMAGE_RANGE) / Hero.DIST_PER_TURN);
-    		                if(numberOfTurnsToReachMonster < 0) numberOfTurnsToReachMonster = 0;
-    		                
-    		                
-    		                
-    		                if(numberOfTurnsToReachMonster < smallestNumberOfTurnsToReachMonster){
-    		                    //hero won't be fast enough to kill monster
-    		                    if((closestMonster.numberOfTurnsToDamageMyBase - numberOfTurnsToReachMonster) * Hero.DAMAGE < closestMonster.health){
-    		                    	// check if hero can wind it
-    		                    	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.WIND_RANGE);
-    		                    	int numberOfTurnsToReachMonsterWind = (int) Math.ceil((getDist(hero.pos, pos) - Hero.WIND_RANGE) / Hero.DIST_PER_TURN);
-    		                    	if(numberOfTurnsToReachMonsterWind < 0) numberOfTurnsToReachMonsterWind = 0;
-    		                        
-    		                        if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterWind <= 0 &&
-    		                        closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterWind &&
-    		                        smallestNumberOfTurnsToMonsterWind > numberOfTurnsToReachMonsterWind){
-    		                        	smallestNumberOfTurnsToMonsterWind = numberOfTurnsToReachMonsterWind;
-    		                        	smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
-    		                            posToGoToACTIONMonster = pos;
-    		                        }
-    		                        else {
-    		                        	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.CONTROL_RANGE);
-    		                        	int numberOfTurnsToReachMonsterControl = (int) Math.ceil((getDist(hero.pos, pos) - Hero.CONTROL_RANGE) / Hero.DIST_PER_TURN);
-    		                        	if(numberOfTurnsToReachMonsterControl < 0) numberOfTurnsToReachMonsterControl = 0;
-    		                            
-    		                            if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterControl <= 0 &&
-    		                               closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterControl + 1 &&
-    		                               smallestNumberOfTurnsToMonsterControl > numberOfTurnsToReachMonsterControl) {
-    		                            	smallestNumberOfTurnsToMonsterControl = numberOfTurnsToReachMonsterControl;
-    		                            	smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
-    		                                posToGoToACTIONMonster = pos;
-    		                            }
-    		                        	else{
-    		                            	if(closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonster) {
-    		    	                            smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
-    		    	                            posToGoToACTIONMonster = pos;
-    		                            	}
-    		                            	//if not then hero can't reach monster before monster damage base
-    		                            }
-    		                        }
-    		                    }
-    		                    else{
-    		                        smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
-    		                        posToGoToACTIONMonster = pos;
-    		                    }
-    		                }
-    		                
-    		                
-    		              //check if just damage will be enough
-    		                if((closestMonster.numberOfTurnsToDamageMyBase - smallestNumberOfTurnsToReachMonster) * Hero.DAMAGE < closestMonster.health){
-//    		                	//check if can reach monster and wind it
-//    		                	if(smallestNumberOfTurnsToMonsterWind < 100) {
-//    		                		if(smallestNumberOfTurnsToMonsterWind == 0 && myBase.mana >= SPELL_COST && closestMonster.shieldLife == 0 &&
-//    		                		inRange(hero.pos, closestMonster.pos, Hero.WIND_RANGE)) windMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterWind);
-//    		                		else goToMonsterToWindIt(hero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterWind, closestMonster);
-//    		                	}
-//    		                	//check if can reach monster and control it
-//    		                	else if(smallestNumberOfTurnsToMonsterControl < 100) {
-//    		                		if(smallestNumberOfTurnsToMonsterControl == 0 && myBase.mana >= SPELL_COST && closestMonster.shieldLife == 0 &&
-//    		                		inRange(hero.pos, closestMonster.pos, Hero.CONTROL_RANGE)) controlMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterControl, closestMonster);
-//    		                		else goToMonsterToControlIt(hero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterControl, closestMonster);
-//    		                	}
-//    		                	else {
-//	    		                	//This hero by himself can't kill the monster but maybe more heros will be able to
-//	    		                	finishSim = true
-//    		                	}
-    		                	finishSim = true;
-    		                }
-    		                else{
-    		                	
-//    		                	int rangeFromRangeToPushMonster = Base.RADIUS;
-//    		                	if(opAttacker != null && inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 2 + Hero.WIND_RANGE)) rangeFromRangeToPushMonster = Base.RADIUS + 2000;
-//    		                	// if monster is inside myBase and I can wind it and
-//    		                	//the monster has more than Hero.DAMAGE life then do it
+if(numberOfTurnsToSim <= 0) return addToEval;
+    	    	
+				Monster closestMonster = findMonsterWithSmallestNumberOfTurnsToDamageBase(monsters);
+	            
+	            //if have no monster that going to damage my base
+	            if(closestMonster == null) return addToEval;
+	            
+	            
+	            int smallestNumberOfTurnsToReachMonster = Integer.MAX_VALUE;
+	            Vector posToGoToACTIONMonster = null;
+	            int smallestNumberOfTurnsToMonsterWind = Integer.MAX_VALUE;
+	            int smallestNumberOfTurnsToMonsterControl = Integer.MAX_VALUE;
+	                
+                Vector pos = hero.getPosToGoToActionMonster(closestMonster, Hero.DAMAGE_RANGE);
+                int numberOfTurnsToReachMonster = (int) Math.ceil((getDist(hero.pos, pos) - Hero.DAMAGE_RANGE) / Hero.DIST_PER_TURN);
+                if(numberOfTurnsToReachMonster < 0) numberOfTurnsToReachMonster = 0;
+                
+                
+                if(numberOfTurnsToReachMonster < smallestNumberOfTurnsToReachMonster){
+                    //hero won't be fast enough to kill monster
+                    if((closestMonster.numberOfTurnsToDamageMyBase - numberOfTurnsToReachMonster) * Hero.DAMAGE < closestMonster.health){
+                    	// check if hero can wind it
+                    	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.WIND_RANGE);
+                    	int numberOfTurnsToReachMonsterWind = (int) Math.ceil((getDist(hero.pos, pos) - Hero.WIND_RANGE) / Hero.DIST_PER_TURN);
+                    	if(numberOfTurnsToReachMonsterWind < 0) numberOfTurnsToReachMonsterWind = 0;
+                        
+                        if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterWind <= 0 &&
+                        closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterWind &&
+                        smallestNumberOfTurnsToMonsterWind > numberOfTurnsToReachMonsterWind){
+                        	smallestNumberOfTurnsToMonsterWind = numberOfTurnsToReachMonsterWind;
+                        	smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
+                            posToGoToACTIONMonster = pos;
+                        }
+                        else {
+                        	pos = hero.getPosToGoToActionMonster(closestMonster, Hero.CONTROL_RANGE);
+                        	int numberOfTurnsToReachMonsterControl = (int) Math.ceil((getDist(hero.pos, pos) - Hero.CONTROL_RANGE) / Hero.DIST_PER_TURN);
+                        	if(numberOfTurnsToReachMonsterControl < 0) numberOfTurnsToReachMonsterControl = 0;
+                            
+                            if(myBase.mana >= SPELL_COST && closestMonster.shieldLife - numberOfTurnsToReachMonsterControl <= 0 &&
+                               closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonsterControl + 1 &&
+                               smallestNumberOfTurnsToMonsterControl > numberOfTurnsToReachMonsterControl) {
+                            	smallestNumberOfTurnsToMonsterControl = numberOfTurnsToReachMonsterControl;
+                            	smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
+                                posToGoToACTIONMonster = pos;
+                            }
+                        	else{
+                            	if(closestMonster.numberOfTurnsToDamageMyBase > numberOfTurnsToReachMonster) {
+    	                            smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
+    	                            posToGoToACTIONMonster = pos;
+                            	}
+                            	//if not then hero can't reach monster before monster damage base
+                            }
+                        }
+                    }
+                    else{
+                        smallestNumberOfTurnsToReachMonster = numberOfTurnsToReachMonster;
+                        posToGoToACTIONMonster = pos;
+                    }
+                }
+                
+                
+              //check if just damage will be enough
+                if((closestMonster.numberOfTurnsToDamageMyBase - smallestNumberOfTurnsToReachMonster) * Hero.DAMAGE < closestMonster.health){
+//                	//check if can reach monster and wind it
+//                	if(smallestNumberOfTurnsToMonsterWind < 100) {
+//                		if(smallestNumberOfTurnsToMonsterWind == 0 && myBase.mana >= SPELL_COST && closestMonster.shieldLife == 0 &&
+//                		inRange(hero.pos, closestMonster.pos, Hero.WIND_RANGE)) windMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterWind);
+//                		else goToMonsterToWindIt(hero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterWind, closestMonster);
+//                	}
+//                	//check if can reach monster and control it
+//                	else if(smallestNumberOfTurnsToMonsterControl < 100) {
+//                		if(smallestNumberOfTurnsToMonsterControl == 0 && myBase.mana >= SPELL_COST && closestMonster.shieldLife == 0 &&
+//                		inRange(hero.pos, closestMonster.pos, Hero.CONTROL_RANGE)) controlMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterControl, closestMonster);
+//                		else goToMonsterToControlIt(hero, posToGoToACTIONMonster, smallestNumberOfTurnsToMonsterControl, closestMonster);
+//                	}
+//                	else {
+//	                	//This hero by himself can't kill the monster but maybe more heros will be able to
+//	                	finishSim = true
+//                	}
+                	return addToEval;
+                }
+                else{
+                	
+//                	int rangeFromRangeToPushMonster = Base.RADIUS;
+//                	if(opAttacker != null && inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 2 + Hero.WIND_RANGE)) rangeFromRangeToPushMonster = Base.RADIUS + 2000;
+//                	// if monster is inside myBase and I can wind it and
+//                	//the monster has more than Hero.DAMAGE life then do it
 //
-////    		                	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 && opAttacker != null && !inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 3 + Hero.WIND_RANGE) &&
-////    		                    inRange(myBase.pos, closestMonster.pos, Base.RADIUS + 1500) && closestMonster.health > Hero.DAMAGE &&
-////    		                    inRange(closestHero.pos, closestMonster.pos, Hero.CONTROL_RANGE)) controlMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, closestMonster);
-//    		                	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 &&
-//    		                    inRange(myBase.pos, closestMonster.pos, rangeFromRangeToPushMonster) && closestMonster.health > Hero.DAMAGE * 2 &&
-//    		                    inRange(closestHero.pos, closestMonster.pos, Hero.WIND_RANGE)) windMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster);
-//    		                    else damageMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster, closestMonster);
-    		                	
-    		                	//move monsters
-    		                	for(Monster monster2 : monsters) {
-    		                		if(monster2.handled || monster2.health <= 0) continue;
-    		                		
-    		                		monster2.pos = monster2.getPosNextXTurns(1);
-    		                		if(closestMonster.id == monster2.id) {
-    		                			posToGoToACTIONMonster = hero.getPosToGoToActionMonster(monster2, Hero.DAMAGE_RANGE);
-    		                		}
-    		                		if(monster2.shieldLife > 0) monster2.shieldLife -= 1;
-    		                	}
-    		                	
-    		                	if(hero.pos == null) System.err.println("hero.pos: " + hero.pos);
-    		                	else if(posToGoToACTIONMonster == null) System.err.println("posToGoToACTIONMonster: " + posToGoToACTIONMonster);
+////                	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 && opAttacker != null && !inRange(closestMonster.pos, opAttacker.pos, Hero.DIST_PER_TURN * 3 + Hero.WIND_RANGE) &&
+////                    inRange(myBase.pos, closestMonster.pos, Base.RADIUS + 1500) && closestMonster.health > Hero.DAMAGE &&
+////                    inRange(closestHero.pos, closestMonster.pos, Hero.CONTROL_RANGE)) controlMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, closestMonster);
+//                	if(myBase.mana >= 100 && closestMonster.shieldLife == 0 &&
+//                    inRange(myBase.pos, closestMonster.pos, rangeFromRangeToPushMonster) && closestMonster.health > Hero.DAMAGE * 2 &&
+//                    inRange(closestHero.pos, closestMonster.pos, Hero.WIND_RANGE)) windMonsterOutOfMyBase(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster);
+//                    else damageMonster(closestHero, posToGoToACTIONMonster, smallestNumberOfTurnsToReachMonster, closestMonster);
+                	
+                	//move monsters
+                	for(Monster monster : monsters) {
+                		if(monster.handled || monster.health <= 0) continue;
+                		
+                		monster.pos = monster.getPosNextXTurns(1);
+                		if(closestMonster.id == monster.id) {
+                			posToGoToACTIONMonster = hero.getPosToGoToActionMonster(monster, Hero.DAMAGE_RANGE);
+                		}
+                		if(monster.shieldLife > 0) monster.shieldLife -= 1;
+                	}
+                	
+                	if(hero.pos == null) System.err.println("hero.pos: " + hero.pos);
+                	else if(posToGoToACTIONMonster == null) System.err.println("posToGoToACTIONMonster: " + posToGoToACTIONMonster);
 
-    		                	//move hero
-    		                	hero.pos = stepTo(hero.pos, posToGoToACTIONMonster, Hero.DIST_PER_TURN);
-    		                	
-    		                	double res = addToEval + simBestPos(hero, posToGoToACTIONMonster, Hero.DAMAGE_RANGE, numberOfTurnsToReachActionMonster - 1, closestMonster.id);
-    		                	System.err.println("here");
-    		                	closestMonster.handled = true;
-    		                	hero.monstersHandling.add(closestMonster.id);
-    		                	return res;
-    		                }
+                	//move hero
+                	hero.pos = stepTo(hero.pos, posToGoToACTIONMonster, Hero.DIST_PER_TURN);
+                	
+                	int numberOfTurnsToActionMonster = smallestNumberOfTurnsToReachMonster + (int) Math.ceil(closestMonster.health * 1.0 / Hero.DAMAGE);
+                	
+                	double res = addToEval + simBestPos(hero, posToGoToACTIONMonster, Hero.DAMAGE_RANGE, numberOfTurnsToActionMonster, numberOfTurnsToSim, closestMonster.id);
+                	closestMonster.handled = true;
+                	hero.monstersHandling.add(closestMonster.id);
+                	return res;
+                }
 */
